@@ -1,0 +1,292 @@
+# Code to analyze results from GTAP-SIMPLEG-Brazil
+# Zhan Wang (zhanwang@purdue.edu)
+
+# Set up
+rm(list=ls())
+
+library(plyr)
+library(RColorBrewer)
+library(ggplot2)
+library(rgdal)
+library(ggpubr)
+library(HARr)
+library("scales")
+# Functions
+Readsol <- function(solution.out,header, csv.out = "temp/temp.csv")
+{
+  system(paste("har2csv",solution.out,csv.out,header,sep=" "))
+  y  <- read.csv(csv.out)
+}
+
+# Main script
+# Read in baseline value
+GRIDDATA = read_har("../in/GRIDDATA.har")
+GRIDPARM = read_har("../in/GRIDPARM.har")
+
+result = read_SL4("../out/Sim.sl4")
+
+# Prepare dataframe
+df = as.data.frame(toupper(row.names(GRIDPARM$lon)))
+colnames(df)[1] = "GID"
+df$lon = GRIDPARM$lon
+df$lat = GRIDPARM$lat
+
+df$QLND.irri =  GRIDDATA$qlnd[,1]
+df$QLND.rain =  GRIDDATA$qlnd[,2]
+
+df$QPLND = GRIDDATA$qpld
+
+df$QFLND = GRIDDATA$qfor
+
+df$Qosd.irri = GRIDDATA$qmcp[,1,5]
+df$Qosd.rain = GRIDDATA$qmcp[,2,5]
+
+df$Qgro.irri = GRIDDATA$qmcp[,1,3]
+df$Qgro.rain = GRIDDATA$qmcp[,2,3]
+
+df$Qc_b.irri = GRIDDATA$qmcp[,1,6]
+df$Qc_b.rain = GRIDDATA$qmcp[,2,6]
+
+# Land use: cropland
+df$p_QLND.irri = result$p_qlandgl[,1,1]
+df$p_QLND.rain = result$p_qlandgl[,2,1]
+
+df$c_QLND = df$QLND.irri * df$p_QLND.irri/100 + df$QLND.rain * df$p_QLND.rain/100
+
+# Land use: pasture
+df$p_QPLD = result$p_qplandg[,]
+df$c_QPLD = df$QPLND * df$p_QPLD/100
+
+# Land use: forest plantation
+df$p_QFLD = result$p_qforestg[,]
+df$c_QFLD = df$QFLND * df$p_QFLD/100
+
+# Crop production: oilseed
+df$p_Qosd.irri = result$p_qmcropglc[,1,5,1]
+df$p_Qosd.rain = result$p_qmcropglc[,2,5,1]
+
+df$c_Qosd = df$Qosd.irri * df$p_Qosd.irri/100 + df$Qosd.rain * df$p_Qosd.rain/100
+
+# Crop production: gro
+df$p_Qgro.irri = result$p_qmcropglc[,1,3,1]
+df$p_Qgro.rain = result$p_qmcropglc[,2,3,1]
+
+df$c_Qgro = df$Qgro.irri * df$p_Qgro.irri/100 + df$Qgro.rain * df$p_Qgro.rain/100
+# Crop production: sugar crop
+df$p_Qc_b.irri = result$p_qmcropglc[,1,6,1]
+df$p_Qc_b.rain = result$p_qmcropglc[,2,6,1]
+
+df$c_Qc_b = df$Qc_b.irri * df$p_Qc_b.irri/100 + df$Qc_b.rain * df$p_Qc_b.rain/100
+
+# Plot - lulc
+FE.polygon = readOGR(dsn="shp/BRUFE250GC_SIR.shp") 
+
+myPalette <- colorRampPalette(c("blue", "white", "red"))
+
+minRes.qlnd = min(df$c_QLND)*1000
+maxRes.qlnd = max(df$c_QLND)*1000
+
+f1 = ggplot() + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill="gray", color="gray", size=0.25)+
+  geom_tile(data=df, aes(x=lon, y=lat, fill=c_QLND*1000)) + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill=NA, color="black", size=0.25) +
+  labs(fill="Area \n(ha)")+
+  scale_fill_gradientn(colours = myPalette(100),
+                       values = rescale(c(minRes.qlnd,0,maxRes.qlnd)),
+                       limits=c(minRes.qlnd,maxRes.qlnd)) +
+  ggtitle("(A) Cropland")+
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_text(size = 25),
+        plot.title = element_text(size = 15))
+f1
+ggsave(paste0("out/", "cropland",".png"),width=8, height=6)
+
+
+minRes.qpld = min(df$c_QPLD)*1000
+maxRes.qpld = max(df$c_QPLD)*1000
+
+f2 = ggplot() + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill="gray", color="gray", size=0.25)+
+  geom_tile(data=df, aes(x=lon, y=lat, fill=c_QPLD*1000)) + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill=NA, color="black", size=0.25) +
+  labs(fill="Area \n(ha)")+
+  scale_fill_gradientn(colours = myPalette(100),
+                       values = rescale(c(minRes.qpld,0,maxRes.qpld)),
+                       limits=c(minRes.qpld,maxRes.qpld)) +
+  ggtitle("(B) Pasture")+
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_text(size = 25),
+        plot.title = element_text(size = 15))
+f2 
+ggsave(paste0("out/", "Pasture",".png"),width=8, height=6)
+
+minRes.qfld = min(df$c_QFLD)*1000
+maxRes.qfld = max(df$c_QFLD)*1000
+
+f3 = ggplot() + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill="gray", color="gray", size=0.25)+
+  geom_tile(data=df, aes(x=lon, y=lat, fill=c_QFLD*1000)) + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill=NA, color="black", size=0.25) +
+  labs(fill="Area \n(ha)")+
+  scale_fill_gradientn(colours = myPalette(100),
+                       values = rescale(c(minRes.qfld,0,maxRes.qfld)),
+                       limits=c(minRes.qfld,maxRes.qfld)) +
+  ggtitle("(C) Forest plantation")+
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_text(size = 25),
+        plot.title = element_text(size = 15))
+f3
+ggsave(paste0("out/", "Forest planation",".png"),width=8, height=6)
+
+ggarrange(plotlist = list(f1, f2, f3), ncol=2, nrow=2, common.legend = F, legend="right",
+          widths = 14*0.75, heights = 12*0.75)
+ggsave(paste0("out/", "LULC_2X2",".png"),width=14*0.75, height=12*0.75)
+
+
+# Plot - crop
+minRes.qosd = min(df$c_Qosd)*1000
+maxRes.qosd = max(df$c_Qosd)*1000
+
+myPalette.osd <- colorRampPalette(c("white", "red"))
+
+f2.1 = ggplot() + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill="gray", color="gray", size=0.25)+
+  geom_tile(data=df, aes(x=lon, y=lat, fill=c_Qosd*1000)) + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill=NA, color="black", size=0.25) +
+  labs(fill="Output \n(t)")+
+  scale_fill_gradientn(colours = myPalette.osd(100),
+                       values = rescale(c(minRes.qosd,maxRes.qosd)),
+                       limits=c(minRes.qosd,maxRes.qosd)) +
+  ggtitle("(A) Oilseeds")+
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_text(size = 25),
+        plot.title = element_text(size = 15))
+f2.1
+ggsave(paste0("out/", "Qosd",".png"),width=8, height=6)
+
+
+minRes.qc_b = min(df$c_Qc_b)*1000
+maxRes.qc_b = max(df$c_Qc_b)*1000
+
+f2.2 = ggplot() + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill="gray", color="gray", size=0.25)+
+  geom_tile(data=df, aes(x=lon, y=lat, fill=c_Qc_b*1000)) + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill=NA, color="black", size=0.25) +
+  labs(fill="Output \n(t)")+
+  scale_fill_gradientn(colours = myPalette(100),
+                       values = rescale(c(minRes.qc_b,0,maxRes.qc_b)),
+                       limits=c(minRes.qc_b,maxRes.qc_b)) +
+  ggtitle("(B) Sugar crops")+
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_text(size = 25),
+        plot.title = element_text(size = 15))
+f2.2 
+ggsave(paste0("out/", "Qc_b",".png"),width=8, height=6)
+
+minRes.qgro = min(df$c_Qgro)*1000
+maxRes.qgro = max(df$c_Qgro)*1000
+
+f2.3 = ggplot() + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill="gray", color="gray", size=0.25)+
+  geom_tile(data=df, aes(x=lon, y=lat, fill=c_Qgro*1000)) + 
+  geom_polygon(data=FE.polygon, aes(x=long, y=lat, group=group), 
+               fill=NA, color="black", size=0.25) +
+  labs(fill="Output \n(t)")+
+  scale_fill_gradientn(colours = myPalette(100),
+                       values = rescale(c(minRes.qgro,0,maxRes.qgro)),
+                       limits=c(minRes.qgro,maxRes.qgro)) +
+  ggtitle("(C) Other grains")+
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_text(size = 25),
+        plot.title = element_text(size = 15))
+f2.3
+ggsave(paste0("out/", "Qgro",".png"),width=8, height=6)
+
+ggarrange(plotlist = list(f2.1, f2.2, f2.3), ncol=2, nrow=2, common.legend = F, legend="right",
+          widths = 14*0.75, heights = 12*0.75)
+ggsave(paste0("out/", "Crop_2X2",".png"),width=14*0.75, height=12*0.75)
+
+# Save results
+write.csv(df, "out/result_grid.csv", row.names = F)
+
+# convert to state and national level 
+# Read in gridded data
+df.allgrid = read.csv("in/df_allgrid_refine.csv",header = T)
+# New grid for Brazil: 103751
+df.allgrid$GID = 1:nrow(df.allgrid)
+df.allgrid$GID = paste0("G",sprintf("%06d", df.allgrid$GID))
+
+df.allgrid$lon_check = df.allgrid$lon
+df.allgrid$lat_check = df.allgrid$lat
+
+df.allgrid.refine = subset(df.allgrid, select = c(lon_check,lat_check, FE_NM_ESTA, FE_NM_REGI, FE_CD_GEOC, GID))
+
+
+df.state = join(df,df.allgrid.refine)
+
+df.state.refine = subset(df.state, select = c(FE_NM_ESTA,c_QLND, c_QPLD, c_QFLD, c_Qosd, c_Qgro, c_Qc_b))
+
+df.state.agg = aggregate(df.state.refine[,2:7], by = list(df.state.refine$FE_NM_ESTA), FUN= "sum")
+colnames(df.state.agg)[1] = "State"
+
+df.state.agg.sum = rbind(df.state.agg, data.frame(State = "Brazil", t(colSums(df.state.agg[, -1]))))
+write.csv(df.state.agg.sum, "out/result_state.csv", row.names = F)

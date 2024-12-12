@@ -1,0 +1,189 @@
+! This Command file
+! C:\runGTAP375\work\TMSFSE.cmf
+! was written by RunGTAP (Version 3.75 built 23/May/2022)
+! If a version has no CMFSTART file of its own
+! RunGTAP creates one by copying the supplied file CMFSTART.DEF
+start with mmnz = 99999999;
+CPU = yes;  ! log show simulation times
+NDS = yes;  ! no displays
+! Extrapolation accuracy file = yes ; ! No XAC file
+!servants=1; ! use 2 processors at once, if possible
+file GTAPSUM = out/SUMMARY.har;
+file WELVIEW = out/DECOMP.har;
+file GTAPVOL = out/GTAPVOL.har;
+
+!@ end of CMFSTART part
+aux files = GTAPV7;
+file GTAPSETS = in\GTAPSETS.har;
+file GTAPDATA = in\GTAPdata.har;
+file GTAPPARM = in\GTAPPARM.har;
+file CALIPARM = in\CALIPARM.har;
+
+file GRIDSETS = in\GRIDSETS.har;
+file GRIDDATA = in\GRIDdata.har;
+file GRIDPARM = in\GRIDPARM.har;
+
+Updated file GTAPDATA = out\GTAPDATA.upd;
+Updated file GRIDDATA = out\GRIDDATA.upd;
+Solution file = out\Calibration;
+LOG file      = out\Calibration.log;
+
+Verbal Description =
+Calibrate model with commodity price shock;
+Method = Gragg;
+Steps = 2 4 6;
+automatic accuracy = no;
+subintervals = 5;
+! Standard GE closure: psave varies by region, pfactwld is numeraire
+! Exogeous from GTAP !
+Exogenous
+          pop
+          psaveslack pfactwld
+          profitslack incomeslack endwslack
+          cgdslack 
+          tradslack
+          ams atm atf ats atd
+          aosec aoreg avasec avareg
+          aintsec aintreg aintall
+          afcom afsec afreg afecom afesec afereg
+          aoall afall afeall
+          au dppriv dpgov dpsave
+          to tinc 
+          tpreg tm tms tx txs
+          !atall avaall 
+          !tfe tfd tfm tgd tgm tpdall tpmall tid tim
+;
+
+Exogenous qe(ENDWM,REG); 
+Exogenous qe(ENDWS,NGREG);
+Exogenous qe(ENDWS,GREG);
+Exogenous qesf(ENDWF, ACTS, NGREG); 
+Exogenous qesf(ENDWF, NFORACT, GREG);
+Exogenous qfe(ENDWF,FACT,GREG);
+Exogenous qes(ENDWF,FACT,GREG);
+Exogenous pes(ENDWF,FACT,GREG);
+
+! Exogenous from SIMPLE !
+!Exogenous  p_AOCROPgl  ;! efficiency index by grid & ltype for CROP
+!Exogenous  p_AFINTgl  ;! efficiency index by grid & ltype for INT
+!Exogenous  p_AFLANDgl  ;! efficiency index by grid & ltype for LAND
+!Exogenous  p_AFLABORgl  ;! efficiency index by grid & ltype for LABOR
+!Exogenous  p_AFCAPgl  ;! efficiency index by grid & ltype for CAP
+!Exogenous  p_AFWATERgl  ;! efficiency index by grid & ltype for WATER
+!Exogenous  p_AFWATSGgl  ;! efficiency index by grid & ltype for WATSG
+!Exogenous  p_AFWATEQgl  ;! efficiency index by grid & ltype for WATEQ
+
+Exogenous  p_AOCROPg  ;! efficiency index by grid for CROP
+!Exogenous  p_AFINTg  ;! efficiency index by grid for INT
+!Exogenous  p_AFLANDg  ;! efficiency index by grid & ltype for LAND
+!Exogenous  p_AFLABORg  ;! efficiency index by grid for LABOR
+!Exogenous  p_AFCAPg  ;! efficiency index by grid for CAP
+!Exogenous  p_AFWATERg  ;! efficiency index by grid for WATER
+!Exogenous  p_AFWATSGg  ;! efficiency index by grid for WATSG
+!Exogenous  p_AFWATEQg  ;! efficiency index by grid for WATEQ
+
+!Exogenous  p_AOCROPrl  ;! efficiency index by grid & reg for CROP
+!Exogenous  p_AFINTrl  ;! efficiency index by grid & reg for INT
+!Exogenous  p_AFLANDrl  ;! efficiency index by grid & reg for LAND
+!Exogenous  p_AFLABORrl  ; ! efficiency index by grid & reg for LABOR
+!Exogenous  p_AFCAPrl  ; ! efficiency index by grid & reg for CAP
+!Exogenous  p_AFWATERrl  ;! efficiency index by grid & reg for WATER
+!Exogenous  p_AFWATSGrl  ;! efficiency index by grid & reg for WATSG
+!Exogenous  p_AFWATEQrl  ;! efficiency index by grid & reg for WATEQ
+
+!Exogenous  p_AOCROPr  ;! efficiency index by reg for CROP
+!Exogenous  p_AFINTr  ;! efficiency index by reg for INT
+!Exogenous  p_AFLANDr  ;! efficiency index by reg for LAND
+!Exogenous  p_AFLABORr  ;! efficiency index by reg for LABOR
+!Exogenous  p_AFCAPr  ;! efficiency index by reg for CAP
+!Exogenous  p_AFWATERr  ;! efficiency index by reg for WATER
+!Exogenous  p_AFWATSGr  ;! efficiency index by reg for WATSG
+!Exogenous  p_AFWATEQr  ;! efficiency index by reg for WATEQ
+
+!Exogenous  s_QINTr   ;! Slack to control intermediate input by reg
+!Exogenous  s_QLABORr   ;! Slack to control labor by reg   
+!Exogenous  s_QCAPr   ;! Slack to control cap by reg
+!Exogenous  s_QLANDg    ;! Slack to target corn-soy harvested area by grid (in 1000 ha) 
+!Exogenous  s_QWATSGg   ;! Slack to control water use by grid !
+!Exogenous  s_QWATEQg   ;! water requiremend index 
+
+Exogenous p_QTLANDg ; ! Supply of total usable land (cropland, pasture, forest)
+
+! Tax / subsidy !
+!Exogenous  t_PCROPgl   ;
+!Exogenous  t_PINTgl   ;
+!Exogenous  t_PLABORgl   ;
+!Exogenous  t_PCAPgl   ;
+!Exogenous  t_PLANDgl   ;
+!Exogenous  t_PWATERgl   ;
+!Exogenous  t_PWATSGgl   ;
+!Exogenous  t_PWATEQgl   ;  
+!Exogenous  t_pb         ;  
+
+! For calibration !
+!Exogenous s_tx ;
+Rest endogenous;
+
+swap pds("Wheat", "Brazil") = tradslack("Wheat", "Brazil");
+swap pds("OtherGrains", "Brazil") = tradslack("OtherGrains", "Brazil");
+swap pds("Rice", "Brazil") = tradslack("Rice", "Brazil");
+swap pds("OilSeed", "Brazil") = tradslack("OilSeed", "Brazil");
+swap pds("VegFruit", "Brazil") = tradslack("VegFruit", "Brazil");
+swap pds("OtherCrops", "Brazil") = tradslack("OtherCrops", "Brazil");
+swap pds("SugarCrops", "Brazil") = tradslack("SugarCrops", "Brazil");
+swap pds("PlantFibers", "Brazil") = tradslack("PlantFibers", "Brazil");
+
+!swap pds("OtherLvStock", "Brazil") = tradslack("OtherLvStock", "Brazil");
+swap pds("RawMilk", "Brazil") = tradslack("RawMilk", "Brazil");
+!swap pds("Wool", "Brazil") = tradslack("Wool", "Brazil");
+swap pds("CattleMeat", "Brazil") = tradslack("CattleMeat", "Brazil");
+swap pds("OtherMeat", "Brazil") = tradslack("OtherMeat", "Brazil");
+
+swap walraslack = pfactwld;
+
+!Shocks!
+shock pds("Wheat","Brazil") =-35.37;
+shock pds("OtherGrains","Brazil") =-31.93;
+shock pds("Rice","Brazil") =-25.43;
+shock pds("OilSeed","Brazil") =-18.19;
+shock pds("VegFruit","Brazil") =-27.28;
+shock pds("OtherCrops","Brazil") =-27.62;
+shock pds("SugarCrops","Brazil") =-13.44;
+shock pds("PlantFibers","Brazil") =-36.02;
+
+!Shocks!
+!shock pds("OtherLvStock","Brazil") =-28.63;
+shock pds("RawMilk","Brazil") =-22.05;
+!shock pds("Wool","Brazil") =-6.64;
+shock pds("CattleMeat","Brazil") =-20.38;
+shock pds("OtherMeat","Brazil") =-19.23;
+
+shock p_QTLANDg("G000001") =-7.71;
+shock p_QTLANDg("G000002") =-9.11;
+shock p_QTLANDg("G000003") =-25.34;
+shock p_QTLANDg("G000004") =-22.29;
+shock p_QTLANDg("G000005") =-7.82;
+shock p_QTLANDg("G000006") =-20.1;
+shock p_QTLANDg("G000007") =-9.66;
+shock p_QTLANDg("G000008") =-6.89;
+shock p_QTLANDg("G000009") =-12.34;
+shock p_QTLANDg("G000010") =3.12;
+shock p_QTLANDg("G000011") =-3.16;
+shock p_QTLANDg("G000012") =0.43;
+shock p_QTLANDg("G000013") =-3.7;
+shock p_QTLANDg("G000014") =-1.06;
+shock p_QTLANDg("G000015") =0.07;
+shock p_QTLANDg("G000016") =-3.04;
+shock p_QTLANDg("G000017") =-0.76;
+shock p_QTLANDg("G000018") =-0.3;
+shock p_QTLANDg("G000019") =1.48;
+shock p_QTLANDg("G000020") =0.9;
+shock p_QTLANDg("G000021") =1.11;
+shock p_QTLANDg("G000022") =-0.24;
+shock p_QTLANDg("G000023") =-4.83;
+shock p_QTLANDg("G000024") =-0.29;
+shock p_QTLANDg("G000025") =-3.27;
+shock p_QTLANDg("G000026") =-0.98;
+shock p_QTLANDg("G000027") =-0.32;
+
+
