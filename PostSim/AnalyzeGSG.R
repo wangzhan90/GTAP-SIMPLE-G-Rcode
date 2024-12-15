@@ -1,4 +1,4 @@
-# Code to analyze results from GTAP-SIMPLEG-Brazil
+# Code to analyze results from GTAP-SIMPLE-G (for Brazil)
 # Zhan Wang (zhanwang@purdue.edu)
 
 # Set up
