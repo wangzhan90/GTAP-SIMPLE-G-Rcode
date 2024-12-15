@@ -1,4 +1,4 @@
-# Calibrate key parameters with Nelder–Mead method
+# Validate results with calibrated key parameters with Nelder–Mead method
 # Zhan Wang (zhanwang@purdue.edu)
 
 # Setup ----
